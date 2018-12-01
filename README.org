@@ -1,0 +1,3 @@
+* advent-of-code 2018
+
+You'll find my advent of code solutions for the winter of 2018
