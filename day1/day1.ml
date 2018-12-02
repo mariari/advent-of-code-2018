@@ -1,10 +1,8 @@
 open Core
 
 let solve_p1 file =
-  let contents = In_channel.read_lines file in
-  List.fold_left contents ~init:0 ~f:(fun acc x ->
-      Int.of_string x + acc)
-
+  In_channel.read_lines file
+  |> List.fold_left ~init:0 ~f:(fun acc x -> Int.of_string x + acc)
 
 let find_repeat xs =
   let rec loop curr_val set = function
@@ -29,7 +27,6 @@ let find_repeat_seq xs =
         else
           Continue (new_val, Set.add set new_val) )
 
-
-let solve_p2 file f =
-  let contents = In_channel.read_lines file in
-  find_repeat contents
+let solve_p2 file =
+  In_channel.read_lines file
+  |> find_repeat
