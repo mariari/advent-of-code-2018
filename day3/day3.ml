@@ -24,7 +24,7 @@ module Parser = struct
       <*> char 'x'     *> integer
 
   let eval str =
-    match parse_string parse str with
+    match parse_string (sep_by (char '\n') parse) str with
     | Ok v      -> v
     | Error msg -> failwith msg
 end
@@ -35,15 +35,15 @@ module Key = struct
   end
   include T
   include Hashable.Make (T)
+  include Comparator.Make(T)
 end
 
 let occupy ht {left; top; width; height} =
-  let update = Hashtbl.update ht ~f:(Option.value_map ~default:1 ~f:succ) in
   let ranges = List.cartesian_product
                  (List.range ~stop:`inclusive (left + 1) (left + width))
                  (List.range ~stop:`inclusive (top + 1)  (top  + height))
   in
-  List.iter ranges update
+  List.iter ranges (Hashtbl.incr ht)
 
 let num_overlap =
   Hashtbl.fold ~init:0 ~f:(fun ~key ~data acc ->
@@ -52,9 +52,9 @@ let num_overlap =
       else acc )
 
 let solve_p1 file =
-  let table = Key.Table.create () ~size:1000 in
-  In_channel.read_lines file
-  |> List.map ~f:Parser.eval
+  let table = Key.Table.create () ~size:1_900_000 in
+  In_channel.read_all file
+  |> Parser.eval
   |> List.iter ~f:(occupy table);
   num_overlap table
 
@@ -71,12 +71,11 @@ let occupy_set ht hs {id; left; top; width; height} =
   in
   List.iter ranges update
 
-
 let solve_p2 file =
-  let table = Key.Table.create () ~size:1000 in
+  let table = Key.Table.create    () ~size:1_900_000 in
   let set   = Int.Hash_set.create () ~size:1254 ~growth_allowed:false in
   List.iter (List.range 1 1254) (Hash_set.add set);
-  In_channel.read_lines file
-  |> List.map ~f:Parser.eval
+  In_channel.read_all file
+  |> Parser.eval
   |> List.iter ~f:(occupy_set table set);
   Hash_set.to_list set
