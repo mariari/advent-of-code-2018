@@ -84,18 +84,63 @@ let guard_sleep_times_of_info = function
   | {action = Sleep} :: _ | {action = Wake} :: _ -> failwith "A guard should come first"
 
 
+let gen_minute_list start length =
+  List.init length (fun i -> (start + i) mod 60)
+
+let increment_map map =
+  List.fold_left
+    ~init:map
+    ~f:(fun map x -> Map.update map x ~f:(Option.value_map ~default:1 ~f:succ))
+
 let guard_sleep_times =
+  let empty_map = Map.empty (module Int) in
   List.fold_left
     ~init:(Map.empty (module Int))
-    ~f:(fun map {start ; length ; num} ->
-      Map.update map num 
-    )
+    ~f:(fun map {start; length ; num} ->
+      let min_list = gen_minute_list start.minute length in
+      Map.update map num
+        ~f:(Option.value_map
+              ~default:(length, increment_map empty_map min_list)
+              ~f:(fun (num_slept, map) ->
+                num_slept + length, increment_map map min_list)))
 
 let solve_gen file =
   In_channel.read_lines file
   |> List.map ~f:Parser.eval
   |> List.sort ~compare:compare_info
   |> guard_sleep_times_of_info
+  |> guard_sleep_times
+
+let gratest_slept =
+  Map.fold
+    ~init:(0,0)
+    ~f:(fun ~key ~data (k,greatest) ->
+      if data > greatest
+      then (key,data)
+      else (k, greatest))
+
 
 let solve_p1 file =
   solve_gen file
+  |> Map.fold
+      ~init:(0, 0, Map.empty (module Int))
+      ~f:(fun ~key ~data:(num_slept, slept_map) ((max_key, max_slept, m) as acc)
+          -> if num_slept > max_slept
+            then (key, num_slept, slept_map)
+            else acc )
+  |> fun (guard_num, _, map) ->
+    let (key,_) = gratest_slept map in
+    guard_num * key
+
+
+let solve_p2 file =
+  solve_gen file
+  |> Map.fold
+      ~init:(0,0,0)
+      ~f:(fun ~key:curr_guard ~data:(_, slept_map) (guard, minute, times_slept) ->
+        let (time,curr_times_slept) = gratest_slept slept_map in
+        if curr_times_slept > times_slept then
+          (curr_guard, time, curr_times_slept)
+        else
+          (guard, minute, times_slept))
+  |> fun (guard, minute, _) -> guard * minute
