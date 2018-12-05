@@ -1,6 +1,6 @@
 open Core
 
-type guard_action = Sleep | Wake | Guard of int
+type guard_action = Sleep | Wake | Guard of int [@@deriving compare]
 
 type time =
   { year   : int
@@ -8,13 +8,13 @@ type time =
   ; day    : int
   ; hour   : int
   ; minute : int
-  }
+  } [@@deriving compare]
 
 (* original format of the file *)
 type message_info =
   { time   : time
   ; action : guard_action
-  }
+  } [@@deriving compare]
 
 type minutes = int
 
@@ -54,12 +54,6 @@ module Parser = struct
     | Error msg -> failwith msg
 end
 
-let tuple_of_time_info {time = {year; month; day; hour; minute}} =
-  (year,month,day,hour,minute)
-
-let compare_info fst snd =
-  compare (tuple_of_time_info fst) (tuple_of_time_info snd)
-
 (* based on the input file I'm not going to account for month or year rollover *)
 let time_to_mins {day ; hour ; minute} =
   minute + 60 * hour + 60 * 24 * day
@@ -95,7 +89,7 @@ let increment_map map =
 let guard_sleep_times =
   let empty_map = Map.empty (module Int) in
   List.fold_left
-    ~init:(Map.empty (module Int))
+    ~init:empty_map
     ~f:(fun map {start; length ; num} ->
       let min_list = gen_minute_list start.minute length in
       Map.update map num
@@ -107,7 +101,7 @@ let guard_sleep_times =
 let solve_gen file =
   In_channel.read_lines file
   |> List.map ~f:Parser.eval
-  |> List.sort ~compare:compare_info
+  |> List.sort ~compare:compare_message_info
   |> guard_sleep_times_of_info
   |> guard_sleep_times
 
