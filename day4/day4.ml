@@ -69,8 +69,7 @@ let guard_sleep_times_of_info = function
           loop num
                ({ start
                 ; num
-                ; length = time_to_mins end_time - time_to_mins start }
-                :: acc)
+                ; length = time_to_mins end_time - time_to_mins start } :: acc)
                xs
        | _ -> failwith "Invalid input format, an awake must come after asleep"
      in
@@ -114,10 +113,10 @@ let gratest_slept =
 let solve_p1 file =
   solve_gen file
   |> Map.fold ~init:(0, 0, Map.empty (module Int))
-              ~f:(fun ~key ~data:(num_slept, slept_map) (max_key, max_slept, m as acc)
-                  -> if num_slept > max_slept
-                     then (key, num_slept, slept_map)
-                     else acc )
+              ~f:(fun ~key ~data:(num_slept, slept_map) (max_key, max_slept, m as acc) ->
+                if num_slept > max_slept
+                then (key, num_slept, slept_map)
+                else acc )
   |> fun (guard_num, _, map) ->
     let (key,_) = gratest_slept map in
     guard_num * key
