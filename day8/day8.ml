@@ -1,21 +1,16 @@
 open Core
 
 type 'a meta_tree =
-  Node of {
-      children : 'a meta_tree list;
-      meta     : 'a list
-    }
-| Empty
+  { children : 'a meta_tree list;
+    meta     : 'a list }
 
 let meta_tree_of_list xs =
   let rec loop = function
-    | [] -> Empty, []
-    | [x] -> failwith "bad input list given to meta_tree_of_list"
+    | [_] | [] -> failwith "bad input list given to meta_tree_of_list"
     | num_children :: num_meta :: xs ->
        let (xs, children) = add_children xs [] num_children in
-       Node { children = children ;
-              meta = List.take xs num_meta
-            }
+       { children = children ;
+         meta = List.take xs num_meta }
        , List.drop xs num_meta
   and add_children xs acc = function
     | 0 -> xs, List.rev acc
@@ -27,8 +22,7 @@ let meta_tree_of_list xs =
 
 let rec fold_tree tree ~init ~f =
   match tree with
-  | Empty -> init
-  | Node {children; meta} ->
+  | {children; meta} ->
      List.fold_left children
                     ~init:(List.fold_left meta ~f ~init)
                     ~f:(fun acc -> fold_tree ~init:acc ~f)
@@ -44,9 +38,8 @@ let solve_p1 file =
   solve_gen file |> fold_tree ~init:0 ~f:(+)
 
 let rec node_value = function
-  | Empty                      -> 0
-  | Node {children = []; meta} -> List.sum (module Int) meta ~f:ident
-  | Node {children; meta} ->
+  | {children = []; meta} -> List.sum (module Int) meta ~f:ident
+  | {children; meta} ->
      let arr_children = Array.of_list children in
      let arr_length   = Array.length arr_children in
      List.fold_left
