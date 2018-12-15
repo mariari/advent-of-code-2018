@@ -5,7 +5,6 @@ module Point = struct
     type t = {x : int; y : int} [@@deriving compare, hash, sexp]
   end
   include T
-  include Hashable.Make (T)
   include Comparator.Make(T)
 end
 
@@ -84,7 +83,6 @@ let get_finite_area points_list =
                  ~init:init_map
                  ~f:(fun map -> List.fold_left ~init:map ~f:update_map)
 
-
 let solve_p1 file =
   In_channel.read_lines file
   |> List.map ~f:Parser.eval
@@ -96,8 +94,7 @@ let solve_p2 file =
   let points_list    = In_channel.read_lines file |> List.map ~f:Parser.eval in
   let (x_dom, y_dom) = boundary points_list in
   let under_10000 cord =
-    List.map points_list ~f:(manhatan_distance cord)
-    |> List.fold_left ~init:0 ~f:(+)
+    List.sum (module Int) ~f:(manhatan_distance cord) points_list
     |> (>) 10000 in
   (* lets try some imperative ocaml for fun! *)
   let num_less_than = ref 0 in
