@@ -9,8 +9,8 @@ let meta_tree_of_list xs =
     | [_] | [] -> failwith "bad input list given to meta_tree_of_list"
     | num_children :: num_meta :: xs ->
        let (xs, children) = add_children xs [] num_children in
-       { children = children ;
-         meta = List.take xs num_meta }
+       { children = children;
+         meta     = List.take xs num_meta }
        , List.drop xs num_meta
   and add_children xs acc = function
     | 0 -> xs, List.rev acc
@@ -42,13 +42,9 @@ let rec node_value = function
   | {children; meta} ->
      let arr_children = Array.of_list children in
      let arr_length   = Array.length arr_children in
-     List.fold_left
-       meta ~init:0
-       ~f:(fun acc i ->
-         if i = 0 || i - 1 >= arr_length then
-           acc
-         else
-           (acc + node_value arr_children.(i - 1)))
+     List.sum (module Int) meta
+              ~f:(fun i -> if i = 0 || i - 1 >= arr_length
+                           then 0 else node_value arr_children.(i - 1))
 
 let solve_p2 file =
   solve_gen file |> node_value
