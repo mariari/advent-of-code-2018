@@ -2,7 +2,6 @@ open Core
 
 (* 459 players; last marble is worth 71320 points *)
 
-(* 71320 *)
 type 'a circular_list = {
     prev : 'a list;
     next : 'a list
