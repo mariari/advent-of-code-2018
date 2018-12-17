@@ -27,7 +27,6 @@ let solve_gen file =
   |> List.hd_exn (* we will eat the extra \n that would normally pop up! *)
   |> String.to_list
 
-
 let solve_p1 file = solve_gen file |> zipper_of_list |> polymer_left
 
 let solve_p2 file =
@@ -40,4 +39,3 @@ let solve_p2 file =
       |> zipper_of_list
       |> polymer_left)
   |> List.min_elt ~compare
-

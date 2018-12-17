@@ -50,25 +50,13 @@ end
 let update_vector {pos = {x = x_pos; y = y_pos}; vel = ({x = x_vel; y = y_vel} as vel)} =
   {pos = {x = x_pos + x_vel; y = y_pos + y_vel}; vel}
 
-let step_board points ~dimx ~dimy ~offset =
-  let new_vec = List.map points update_vector in
-  let board   = Array.make_matrix ~dimx ~dimy '.' in
-  List.iter new_vec (fun {pos = {x;y}} -> board.(y + offset).(x + offset) <- '#');
-  (board, new_vec)
-
-let rec run_board_n points ~i ~dimx ~dimy ~offset =
-  match i with
-  | 0 -> step_board points dimx dimy offset
-  | i -> let (board, points) = step_board points dimx dimy offset in
-         Array.iter board ~f:(fun x -> Array.iter x (printf "%c"); printf "\n");
-         run_board_n points (pred i) dimx dimy offset
+let update_vectors =
+  List.map ~f:update_vector
 
 let num_connected points =
   let neighboring_points {x; y} =
-    [{x = succ x; y = succ y}; {x = succ x; y = pred y};
-     {x = pred x; y = succ y}; {x = pred x; y = pred y};
-     {x;          y = succ y}; {x;          y = pred y};
-     {x = succ x; y};          {x = pred x; y}]
+    [{x; y = succ y}; {x; y = pred y};
+     {x = succ x; y}; {x = pred x; y}]
   in
   let pos = List.map ~f:(fun p -> p.pos) points in
   let set = Set.of_list (module Pos) pos in
@@ -77,9 +65,49 @@ let num_connected points =
     ~f:(fun (set,i) p ->
       Set.remove set p,
       neighboring_points p
-      |> List.sum (module Int) ~f:(Fn.compose Bool.to_int (Set.mem set)))
+      |> List.sum (module Int) ~f:(Fn.compose Bool.to_int (Set.mem set))
+      |> (+) i)
+  |> Tuple2.get2
 
-let solve_p1 file =
+let find_message points ~goal =
+  let rec get_close points i =
+    let num = num_connected points in
+    if num >= goal then
+      points, num, i
+    else
+      get_close (update_vectors points) (succ i)
+  in
+  (* turns out this section is uneeded with the goal of 180! *)
+  let rec potentials points potential_points max_seen i =
+    let num = num_connected points in
+    if num >= max_seen then
+      potentials (update_vectors points)
+                 ((List.map points (fun p -> p.pos), i) :: potential_points)
+                 num
+                 (succ i)
+    else
+      potential_points
+    in
+    let (new_points, max, i) = get_close points 0 in
+    potentials new_points [] max i
+
+let print_point (xs, i) =
+  let gen init g f = List.fold xs ~init ~f:(fun min_value x -> g min_value (f x)) in
+  let min_gen      = gen Int.max_value Int.min in
+  let max_gen      = gen Int.min_value Int.max in
+  let min_x        = min_gen (fun p -> p.x) in
+  let min_y        = min_gen (fun p -> p.y) in
+  let max_x        = max_gen (fun p -> p.x) in
+  let max_y        = max_gen (fun p -> p.y) in
+  let board = Array.make_matrix '.' ~dimx:(max_y - min_y + 1) ~dimy:(max_x - min_x + 1) in
+  List.iter xs (fun {x;y} -> board.(y - min_y).(x - min_x) <- '#');
+  printf "after %i seconds:\n" i;
+  Array.iter board ~f:(fun x -> Array.iter x (printf "%c"); printf "\n")
+
+let solve_gen file =
   In_channel.read_lines file
   |> List.map ~f:Parser.eval
-  |> num_connected
+  |> find_message ~goal:180
+  |> List.iter ~f:print_point
+
+(* let () = solve_gen "input.txt" *)
