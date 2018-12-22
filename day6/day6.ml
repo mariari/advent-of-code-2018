@@ -26,9 +26,7 @@ module Parser = struct
       <*> string ", " *> integer
 
   let eval str =
-    match parse_string parse str with
-    | Ok v      -> v
-    | Error msg -> failwith msg
+    parse_string parse str |> Result.ok_or_failwith
 end
 
 let manhatan_distance Point.{x = x1; y = y1} Point.{x = x2; y = y2} =
@@ -45,14 +43,15 @@ let update_cloest_point p1 (cords, point) = match point with
   | NoPoints -> (cords, FarFrom p1)
   | EqualDistance p2 -> (* compare is a lot easier to work with than >= *)
      ( match Int.compare (manhatan_distance p1 cords) (manhatan_distance p2 cords) with
-     | 0  -> (cords, EqualDistance p2)
-     | 1  -> (cords, EqualDistance p2)
-     | _  -> (cords, FarFrom p1) ) (* _ is always -1 *)
+     | 0 | 1  -> (cords, EqualDistance p2)
+     | -1     -> (cords, FarFrom p1)
+     | _      -> failwith "compare should never return a non 0,1,-1 number")
   | FarFrom p2 ->
      match Int.compare (manhatan_distance p1 cords) (manhatan_distance p2 cords) with
      | 0  -> (cords, EqualDistance p2)
      | 1  -> (cords, FarFrom p2)
-     | _  -> (cords, FarFrom p1)
+     | -1 -> (cords, FarFrom p1)
+     | _  -> failwith "compare should never return a non 0,1,-1 number"
 
 (* generates the boundary for the grid *)
 let boundary xs =

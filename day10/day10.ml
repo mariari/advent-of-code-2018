@@ -36,15 +36,12 @@ module Parser = struct
       <*> char ',' *> int_space <* char '>'
 
   let parse =
-    let f pos vel = {pos; vel}
-    in
+    let f pos vel = {pos; vel} in
     f <$> string "position="  *> parse_point
       <*> string " velocity=" *> parse_point
 
   let eval str =
-    match parse_string parse str with
-    | Ok v      -> v
-    | Error msg -> failwith msg
+    parse_string parse str |> Result.ok_or_failwith
 end
 
 let update_vector {pos = {x = x_pos; y = y_pos}; vel = ({x = x_vel; y = y_vel} as vel)} =
@@ -77,7 +74,7 @@ let find_message points ~goal =
     else
       get_close (update_vectors points) (succ i)
   in
-  (* turns out this section is uneeded with the goal of 180! *)
+  (* turns out this section is unneeded with the goal of 180! *)
   let rec potentials points potential_points max_seen i =
     let num = num_connected points in
     if num >= max_seen then
